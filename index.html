@@ -1,28 +1,26 @@
-<!DOCTYPE html>
+                     
+        <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>🛡️ Secure Image Proofer | Ultra Robust Engine</title>
+    <title>🛡️ Secure Image Proofer | Anti-Duplicate Engine</title>
     
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
 
     <style>
-        :root { --primary: #28a745; --secondary: #1e3c72; --bg: #f4f7f6; --text-dark: #333; }
+        :root { --primary: #28a745; --secondary: #1e3c72; --bg: #f4f7f6; --text-dark: #333; --danger: #dc3545; }
         * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Tahoma, sans-serif; }
         body { background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%); min-height: 100vh; padding: 15px; display: flex; justify-content: center; }
         
-        /* Containers */
         .auth-box { background: white; width: 100%; max-width: 450px; border-radius: 20px; padding: 30px; box-shadow: 0 10px 30px rgba(0,0,0,0.4); margin-top: 40px; }
         .app-container { background: white; width: 100%; max-width: 600px; border-radius: 20px; box-shadow: 0 10px 40px rgba(0,0,0,0.5); overflow: hidden; display: none; }
         
-        /* Header & Lang Toggle */
         .header { background: linear-gradient(135deg, var(--primary), #20c997); color: white; padding: 30px 25px; text-align: center; position: relative; }
         .lang-control { position: absolute; top: 10px; right: 10px; }
         .lang-btn { background: rgba(255,255,255,0.25); border: 1.5px solid white; color: white; padding: 6px 14px; border-radius: 25px; cursor: pointer; font-size: 0.75em; font-weight: bold; transition: 0.3s; }
         
-        /* Tabs */
         .tab-header { display: flex; background: #f8f9fa; border-bottom: 1px solid #ddd; }
         .tab-btn { flex: 1; padding: 16px 5px; text-align: center; cursor: pointer; font-weight: bold; color: #666; border-bottom: 4px solid transparent; transition: 0.3s; font-size: 0.9em; }
         .tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); background: white; }
@@ -31,14 +29,14 @@
         .tab-content.active { display: block; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
 
-        h2 { font-size: 1.3em; margin-bottom: 18px; color: var(--text-dark); display: flex; align-items: center; gap: 8px; }
-        input, select { width: 100%; padding: 14px; margin: 10px 0; border: 2px solid #eee; border-radius: 12px; font-size: 15px; transition: 0.3s; }
+        h2 { font-size: 1.2em; margin-bottom: 18px; color: var(--text-dark); display: flex; align-items: center; gap: 8px; }
+        input, select { width: 100%; padding: 14px; margin: 10px 0; border: 2px solid #eee; border-radius: 12px; font-size: 15px; }
         
-        .action-btn { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; }
+        .action-btn { width: 100%; padding: 15px; background: var(--primary); color: white; border: none; border-radius: 12px; font-weight: bold; cursor: pointer; margin-top: 10px; font-size: 16px; transition: 0.3s; }
         .action-btn:disabled { background: #ccc; cursor: not-allowed; }
         .secondary-btn { background: var(--secondary); }
         .reset-btn { background: #6c757d; margin-top: 15px; font-size: 14px; }
-        .logout-btn { background: #e63946; margin-top: 25px; }
+        .logout-btn { background: var(--danger); margin-top: 25px; }
 
         .result-box { margin-top: 20px; padding: 15px; border-radius: 12px; text-align: center; font-weight: bold; }
         .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
@@ -149,7 +147,7 @@
         <!-- TAB 3: VERIFY -->
         <div id="tabVerify" class="tab-content">
             <h2 data-translate="verifyTitle">🔍 Verify Ownership</h2>
-            <p style="font-size:0.8em; color:#666; margin-bottom:10px;">WhatsApp noise, Crop, Filter, and Zoom protection active.</p>
+            <p style="font-size:0.8em; color:#666; margin-bottom:10px;">Deep Scan: Protection against crops, filters, and screenshots.</p>
             <input type="file" id="verifyImg" accept="image/*">
             <div id="verifyScanMsg" class="result-box hidden"></div>
             <button id="verifyBtn" class="action-btn" onclick="handleVerify()" disabled data-translate="btnVerify">✅ Deep Structural Scan</button>
@@ -196,7 +194,8 @@
                 btnUnlock: "🔑 Verify & Unlock", btnUpdateDB: "🔄 Update Database", verifyTitle: "🔍 Verify Ownership",
                 btnVerify: "✅ Deep Structural Scan", profileTitle: "👤 My Profile", profUpdateHead: "Update Profile Info",
                 btnUpdateProf: "Update Profile", btnLogout: "🚪 Logout Account", 
-                errOwnership: "❌ Image is already protected by another user or invalid!", errWrongId: "Wrong ID!"
+                errAlreadyOwned: "❌ Critical: This image is already registered by another owner! You cannot claim it.", 
+                errWrongId: "Wrong ID!"
             },
             hi: {
                 appHeader: "🛡️ सुरक्षित इमेज प्रूफर", dbStatus: "डेटाबेस कनेक्टेड",
@@ -207,7 +206,8 @@
                 btnUnlock: "🔑 वेरिफाई और अनलॉक", btnUpdateDB: "🔄 डेटाबेस अपडेट करें", verifyTitle: "🔍 ओनरशिप की जांच",
                 btnVerify: "✅ स्ट्रक्चरल स्कैन करें", profileTitle: "👤 मेरी प्रोफाइल", profUpdateHead: "सुरक्षा जानकारी अपडेट करें",
                 btnUpdateProf: "प्रोफ़ाइल अपडेट करें", btnLogout: "🚪 लॉगआउट करें",
-                errOwnership: "❌ यह इमेज पहले से ही किसी और के नाम पर सुरक्षित है!", errWrongId: "आईडी गलत है!"
+                errAlreadyOwned: "❌ अलर्ट: यह इमेज पहले से ही किसी और के नाम पर रजिस्टर है! आप इसे दोबारा रजिस्टर नहीं कर सकते।", 
+                errWrongId: "आईडी गलत है!"
             }
         };
 
@@ -221,27 +221,23 @@
             document.getElementById('tab4Head').innerText = i18n[currentLang].tab4;
         }
 
+        // --- RESET LOGIC (NO RELOAD) ---
         function resetAddTab() {
             document.getElementById('addImg').value = "";
             document.getElementById('addFormWrapper').classList.remove('hidden');
             document.getElementById('addResult').classList.add('hidden');
             document.getElementById('addBtn').disabled = true;
             tempAddHash = ""; tempImg = null;
-            fetchProfile(); 
+            fetchProfile();
         }
-
         function resetEditTab() {
             document.getElementById('editImg').value = "";
             document.getElementById('editScanResult').classList.add('hidden');
             document.getElementById('editLockBox').classList.add('hidden');
             document.getElementById('editFormBox').classList.add('hidden');
             document.getElementById('editVerifyId').value = "";
-            document.getElementById('editNameNew').value = "";
-            document.getElementById('editMobileNew').value = "";
-            document.getElementById('editIdNew').value = "";
             editRecord = null;
         }
-
         function resetVerifyTab() {
             document.getElementById('verifyImg').value = "";
             document.getElementById('verifyScanMsg').classList.add('hidden');
@@ -249,32 +245,27 @@
             document.getElementById('verifyBtn').disabled = true;
         }
 
+        // --- AUTH ---
         function toggleAuth(isSignup) {
             document.getElementById('loginForm').classList.toggle('hidden', isSignup);
             document.getElementById('signupForm').classList.toggle('hidden', !isSignup);
             document.getElementById('authTitle').innerText = isSignup ? 'Signup' : 'Login';
         }
-
         async function handleSignup() {
-            const regGender = document.getElementById('regGender');
-            const regDob = document.getElementById('regDob');
-            if(!regGender.value || !regDob.value){
-                alert("Gender and DOB required");
-                return;
-            }
+            const gen = document.getElementById('regGender').value;
+            const dob = document.getElementById('regDob').value;
+            if(!gen || !dob) return alert("Gender and DOB required");
             const { data, error } = await supabaseClient.auth.signUp({ email: document.getElementById('regEmail').value, password: document.getElementById('regPass').value });
             if(error) return alert(error.message);
             if(data.user) {
-                await supabaseClient.from('profiles').insert([{ id: data.user.id, full_name: document.getElementById('regName').value, mobile: document.getElementById('regMobile').value, id_number: document.getElementById('regId').value, gender: regGender.value, dob: regDob.value }]);
-                alert("Signup Success! Check email."); toggleAuth(false);
+                await supabaseClient.from('profiles').insert([{ id: data.user.id, full_name: document.getElementById('regName').value, mobile: document.getElementById('regMobile').value, id_number: document.getElementById('regId').value, gender: gen, dob: dob }]);
+                alert("Signup Success!"); toggleAuth(false);
             }
         }
-
         async function handleLogin() {
             const { error } = await supabaseClient.auth.signInWithPassword({ email: document.getElementById('loginEmail').value, password: document.getElementById('loginPass').value });
-            if(error) alert("Login Fail.");
+            if(error) alert("Login Failed.");
         }
-
         async function handleLogout() { await supabaseClient.auth.signOut(); location.reload(); }
 
         supabaseClient.auth.onAuthStateChange(async (event, session) => {
@@ -297,9 +288,6 @@
                 document.getElementById('profEmail').innerText = currentUser.email;
                 document.getElementById('profMob').innerText = data.mobile;
                 document.getElementById('profId').innerText = data.id_number;
-                document.getElementById('upProfName').value = data.full_name;
-                document.getElementById('upProfMob').value = data.mobile;
-                document.getElementById('upProfEmail').value = currentUser.email;
                 document.getElementById('addName').value = data.full_name;
                 document.getElementById('addMobile').value = data.mobile;
                 document.getElementById('addId').value = data.id_number;
@@ -307,19 +295,11 @@
         }
 
         async function updateProfile() {
-            const newName = document.getElementById('upProfName').value;
-            const newMob = document.getElementById('upProfMob').value;
-            const newEmail = document.getElementById('upProfEmail').value;
-            const newPass = document.getElementById('upProfPass').value;
-            const { error: pError } = await supabaseClient.from('profiles').update({ full_name: newName, mobile: newMob }).eq('id', currentUser.id);
-            let updateObj = {};
-            if(newEmail !== currentUser.email) updateObj.email = newEmail;
-            if(newPass) updateObj.password = newPass;
-            if(Object.keys(updateObj).length > 0) await supabaseClient.auth.updateUser(updateObj);
-            if(!pError) { alert("Profile Updated!"); fetchProfile(); }
+            const { error } = await supabaseClient.from('profiles').update({ full_name: document.getElementById('upProfName').value, mobile: document.getElementById('upProfMob').value }).eq('id', currentUser.id);
+            if(!error) alert("Profile Updated!"); fetchProfile();
         }
 
-        // --- ULTRA ROBUST ENGINE ---
+        // --- CORE ENGINE (PERCEPTUAL HASHING) ---
         async function getPHash(img) {
             return new Promise(res => {
                 const canvas = document.createElement('canvas');
@@ -334,51 +314,50 @@
                 let hash = "";
                 for (let y = 0; y < 32; y++) {
                     for (let x = 0; x < 32; x++) {
-                        let left = grayscale[y * 33 + x];
-                        let right = grayscale[y * 33 + (x + 1)];
-                        hash += (left < right ? '1' : '0');
+                        hash += (grayscale[y * 33 + x] < grayscale[y * 33 + (x + 1)] ? '1' : '0');
                     }
                 }
                 res(hash);
             });
         }
 
-        function calculateSimilarity(h1, h2) {
-            let matches = 0;
-            for (let i = 0; i < 1024; i++) if (h1[i] === h2[i]) matches++;
-            return (matches / 1024) * 100;
+        function getSimilarity(h1, h2) {
+            let m = 0; for(let i=0; i<1024; i++) if(h1[i] === h2[i]) m++;
+            return (m/1024)*100;
         }
 
-        async function findOwnership(targetHash) {
+        async function findGlobalMatch(newHash) {
             const { data } = await supabaseClient.from('image_ownership').select('*');
-            let bestMatch = null, maxScore = 0;
             if(!data) return null;
-            data.forEach(r => {
-                let score = calculateSimilarity(targetHash, r.image_hash);
-                // Threshold of 62% captures even highly edited/cropped images
-                if(score > 62 && score > maxScore) { maxScore = score; bestMatch = r; }
+            let best = null, maxS = 0;
+            data.forEach(row => {
+                let s = getSimilarity(newHash, row.image_hash);
+                if(s > 60 && s > maxS) { maxS = s; best = row; }
             });
-            return bestMatch;
+            return best;
         }
 
-        // --- TAB 1 ACTIONS ---
+        // --- TAB 1: REGISTER WITH STRICTOR BLOCKING ---
         let tempAddHash = "", tempImg = null;
         document.getElementById('addImg').onchange = async (e) => {
-            const file = e.target.files[0]; if(!file) return;
             const img = new Image();
-            img.onload = async () => { tempImg = img; tempAddHash = await getPHash(img); document.getElementById('addBtn').disabled = false; };
-            img.src = URL.createObjectURL(file);
+            img.onload = async () => { 
+                tempImg = img; 
+                tempAddHash = await getPHash(img); 
+                document.getElementById('addBtn').disabled = false; 
+            };
+            img.src = URL.createObjectURL(e.target.files[0]);
         };
 
         async function handleRegister() {
-            const btn = document.getElementById('addBtn'); btn.innerText = "⏳ Checking Security...";
+            const btn = document.getElementById('addBtn'); btn.innerText = "⏳ Scanning Database...";
             
-            // CRITICAL: Block registration if image already exists in database
-            const exist = await findOwnership(tempAddHash);
-            if(exist) { 
+            // GLOBAL CHECK: Does this image (or similar) already exist?
+            const exist = await findGlobalMatch(tempAddHash);
+            if(exist) {
                 btn.innerText = i18n[currentLang].addBtn;
-                alert(i18n[currentLang].errOwnership); 
-                return; 
+                alert(i18n[currentLang].errAlreadyOwned); // BLOCKED!
+                return;
             }
 
             const { error } = await supabaseClient.from('image_ownership').insert([{
@@ -390,25 +369,22 @@
                 document.getElementById('resName').innerText = document.getElementById('addName').value;
                 document.getElementById('resMobile').innerText = document.getElementById('addMobile').value;
                 document.getElementById('resId').innerText = document.getElementById('addId').value;
-                const canvas = document.createElement('canvas'); canvas.width = tempImg.width; canvas.height = tempImg.height;
-                const ctx = canvas.getContext('2d'); ctx.drawImage(tempImg, 0, 0);
-                ctx.fillStyle = "rgba(255,255,255,0.4)"; ctx.font = `${canvas.width/20}px Arial`; ctx.fillText(`SECURED: ${document.getElementById('addName').value}`, 20, canvas.height - 20);
-                document.getElementById('visualFinal').innerHTML = `<img src="${canvas.toDataURL()}" class="preview-img">`;
                 document.getElementById('addResult').classList.remove('hidden');
             }
             btn.innerText = i18n[currentLang].addBtn;
         }
 
-        // --- TAB 2 ACTIONS ---
+        // --- TAB 2: EDIT ---
         let editRecord = null;
         document.getElementById('editImg').onchange = async (e) => {
-            const scanRes = document.getElementById('editScanResult');
-            scanRes.classList.add('hidden');
             const img = new Image();
             img.onload = async () => {
-                const hash = await getPHash(img); editRecord = await findOwnership(hash);
+                const hash = await getPHash(img); editRecord = await findGlobalMatch(hash);
                 if(editRecord) document.getElementById('editLockBox').classList.remove('hidden');
-                else { scanRes.innerText = i18n[currentLang].errOwnership; scanRes.className="result-box error"; scanRes.classList.remove('hidden'); }
+                else { 
+                    const res = document.getElementById('editScanResult');
+                    res.innerText = "❌ Image not found in registry."; res.className="result-box error"; res.classList.remove('hidden');
+                }
             };
             img.src = URL.createObjectURL(e.target.files[0]);
         };
@@ -424,50 +400,23 @@
         }
 
         async function updateDatabase() {
-            const { error } = await supabaseClient.from('image_ownership').update({ 
-                owner_name: document.getElementById('editNameNew').value, 
-                mobile: document.getElementById('editMobileNew').value,
-                id_number: document.getElementById('editIdNew').value
-            }).eq('id', editRecord.id);
-            if(!error) { alert("Updated!"); resetEditTab(); }
+            await supabaseClient.from('image_ownership').update({ owner_name: document.getElementById('editNameNew').value, mobile: document.getElementById('editMobileNew').value, id_number: document.getElementById('editIdNew').value }).eq('id', editRecord.id);
+            alert("Updated!"); resetEditTab();
         }
 
-        // --- TAB 3 ACTIONS ---
-        document.getElementById('verifyImg').onchange = async (e) => {
-            const file = e.target.files[0]; if(!file) return;
-            document.getElementById('verifyBtn').disabled = false;
-            const scanMsg = document.getElementById('verifyScanMsg');
-            document.getElementById('verifyResult').classList.add('hidden');
-            scanMsg.classList.add('hidden');
-            
-            const img = new Image();
-            img.onload = async () => {
-                const hash = await getPHash(img);
-                const match = await findOwnership(hash);
-                if(!match) {
-                    scanMsg.innerText = i18n[currentLang].errOwnership;
-                    scanMsg.className = "result-box error";
-                    scanMsg.classList.remove('hidden');
-                }
-            };
-            img.src = URL.createObjectURL(file);
-        };
-
+        // --- TAB 3: VERIFY ---
+        document.getElementById('verifyImg').onchange = (e) => { document.getElementById('verifyBtn').disabled = false; };
         async function handleVerify() {
-            const btn = document.getElementById('verifyBtn'); btn.innerText = "⏳ Deep Scanning...";
+            const btn = document.getElementById('verifyBtn'); btn.innerText = "⏳ Deep Scanning Structural Data...";
             const img = new Image();
             img.onload = async () => {
-                const hash = await getPHash(img); const match = await findOwnership(hash);
+                const hash = await getPHash(img); const match = await findGlobalMatch(hash);
                 const res = document.getElementById('verifyResult'); res.classList.remove('hidden');
                 if(match) {
                     const mask = (s) => s.substring(0, 2) + "****" + s.slice(-2);
-                    res.innerHTML = `
-                        <div class="owner-card">
-                            <h3 style="color:#00ff00">✅ MATCH FOUND</h3>
-                            <div class="detail-row"><span>Owner:</span> <b>${match.owner_name}</b></div>
-                            <div class="detail-row"><span>Mobile:</span> <b>${mask(match.mobile)}</b></div>
-                            <div class="detail-row"><span>ID:</span> <b>${mask(match.id_number)}</b></div>
-                        </div>`;
+                    res.innerHTML = `<div class="owner-card"><h3 style="color:#00ff00">✅ ORIGINAL OWNER FOUND</h3><div class="detail-row"><span>Owner:</span> <b>${match.owner_name}</b></div><div class="detail-row"><span>Mobile:</span> <b>${mask(match.mobile)}</b></div><div class="detail-row"><span>ID:</span> <b>${mask(match.id_number)}</b></div></div>`;
+                } else {
+                    res.innerHTML = `<div class="result-box error">❌ This image is UNPROTECTED and has no registered owner.</div>`;
                 }
                 btn.innerText = i18n[currentLang].btnVerify;
             };
