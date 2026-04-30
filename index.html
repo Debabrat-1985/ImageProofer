@@ -1,0 +1,501 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛡️ Vilayas Integrity Suite | Enterprise Image Protection</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrious@4.0.2/dist/qrious.min.js"></script>
+
+    <style>
+        :root { 
+            --primary: #28a745; 
+            --secondary: #1e3c72; 
+            --bg: #f4f7f6; 
+            --text-dark: #333; 
+            --danger: #e63946; 
+            --glass: rgba(255, 255, 255, 0.95);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; }
+        body { background: linear-gradient(135deg, #0f2027 0%, #203a43 50%, #2c5364 100%); min-height: 100vh; padding: 15px; display: flex; justify-content: center; }
+        
+        /* Professional Toast System */
+        #toast-container { position: fixed; top: 20px; right: 20px; z-index: 10000; pointer-events: none; }
+        .toast {
+            background: var(--glass); color: #333; padding: 16px 24px; border-radius: 14px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.2); margin-bottom: 12px;
+            border-left: 6px solid var(--primary); display: flex; align-items: center;
+            gap: 15px; font-weight: 600; min-width: 320px; max-width: 450px;
+            transform: translateX(120%); transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            pointer-events: auto; backdrop-filter: blur(10px);
+        }
+        .toast.show { transform: translateX(0); }
+        .toast.error { border-left-color: var(--danger); }
+        .toast.warning { border-left-color: #ff9f43; }
+        .toast-icon { font-size: 1.4em; }
+
+        /* App Styles */
+        .auth-box { background: white; width: 100%; max-width: 450px; border-radius: 24px; padding: 35px; box-shadow: 0 20px 50px rgba(0,0,0,0.5); margin-top: 40px; }
+        .app-container { background: white; width: 100%; max-width: 600px; border-radius: 24px; box-shadow: 0 25px 60px rgba(0,0,0,0.6); overflow: hidden; display: none; }
+        
+        .header { background: linear-gradient(135deg, #1e3c72, #2a5298); color: white; padding: 35px 25px; text-align: center; position: relative; }
+        .lang-control { position: absolute; top: 15px; right: 15px; }
+        .lang-btn { background: rgba(255,255,255,0.15); border: 1px solid rgba(255,255,255,0.4); color: white; padding: 7px 15px; border-radius: 30px; cursor: pointer; font-size: 0.8em; font-weight: bold; transition: 0.3s; }
+        .lang-btn:hover { background: rgba(255,255,255,0.3); }
+        
+        .tab-header { display: flex; background: #f1f3f5; border-bottom: 1px solid #ddd; }
+        .tab-btn { flex: 1; padding: 18px 5px; text-align: center; cursor: pointer; font-weight: bold; color: #777; border-bottom: 4px solid transparent; transition: 0.3s; font-size: 0.95em; }
+        .tab-btn.active { color: var(--secondary); border-bottom-color: var(--secondary); background: white; }
+
+        .tab-content { padding: 30px; display: none; animation: fadeIn 0.4s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(15px); } to { opacity: 1; transform: translateY(0); } }
+
+        h2 { font-size: 1.3em; margin-bottom: 20px; color: var(--secondary); display: flex; align-items: center; gap: 10px; }
+        input, select { width: 100%; padding: 15px; margin: 10px 0; border: 2px solid #eaedf0; border-radius: 14px; font-size: 15px; outline: none; transition: 0.3s; }
+        input:focus { border-color: var(--secondary); box-shadow: 0 0 0 4px rgba(30, 60, 114, 0.1); }
+        
+        .action-btn { width: 100%; padding: 16px; background: var(--secondary); color: white; border: none; border-radius: 14px; font-weight: bold; cursor: pointer; margin-top: 15px; font-size: 16px; transition: 0.3s; }
+        .action-btn:hover { filter: brightness(1.2); transform: translateY(-2px); box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+        .action-btn:disabled { background: #cbd5e0; transform: none; cursor: not-allowed; }
+        .secondary-btn { background: #4a5568; }
+        .reset-btn { background: #718096; margin-top: 20px; font-size: 14px; }
+        .logout-btn { background: var(--danger); margin-top: 30px; }
+
+        .result-box { margin-top: 25px; padding: 18px; border-radius: 15px; text-align: center; font-weight: bold; }
+        .success-box { background: #f0fff4; color: #276749; border: 1px solid #c6f6d5; }
+        .error-box { background: #fff5f5; color: #c53030; border: 1px solid #fed7d7; }
+        
+        .owner-card { background: linear-gradient(145deg, #1a365d, #2c5282); color: white; padding: 25px; border-radius: 20px; margin-top: 20px; border-left: 8px solid var(--primary); }
+        .detail-row { display: flex; justify-content: space-between; margin: 12px 0; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+        
+        .status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: #ff4757; margin-right: 8px; }
+        .status-dot.active { background: #2ed573; box-shadow: 0 0 12px #2ed573; }
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+    <!-- Professional Toasts Container -->
+    <div id="toast-container"></div>
+
+    <!-- AUTH SECTION -->
+    <div id="authSection" class="auth-box">
+        <h2 id="authTitle" style="text-align:center;">Security Authentication</h2>
+        <div id="loginForm">
+            <input type="email" id="loginEmail" placeholder="Authorized Email">
+            <input type="password" id="loginPass" placeholder="Access Key">
+            <button class="action-btn" onclick="handleLogin()">Establish Secure Session</button>
+            <button class="action-btn secondary-btn" onclick="toggleAuth(true)">Register New Security Profile</button>
+        </div>
+
+        <div id="signupForm" class="hidden">
+            <input type="text" id="regName" placeholder="Full Identity Name">
+            <input type="email" id="regEmail" placeholder="Primary Email">
+            <input type="tel" id="regMobile" placeholder="Secure Contact Number">
+            <input type="text" id="regId" placeholder="Govt ID / Passport Reference">
+            <select id="regGender">
+                <option value="">Gender Classification</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+            </select>
+            <input type="date" id="regDob">
+            <input type="password" id="regPass" placeholder="Security Passphrase (min 6)">
+            <button class="action-btn" onclick="handleSignup()">Initialize Secure Protocol</button>
+            <button class="action-btn secondary-btn" onclick="toggleAuth(false)">Return to Authentication</button>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="appSection" class="app-container">
+        <div class="header">
+            <div class="lang-control">
+                <button id="langToggleBtn" class="lang-btn" onclick="changeLang()">🌐 Hindi Mode</button>
+            </div>
+            <h1 id="appHeader" data-translate="appHeader">🛡️ Secure Integrity Suite</h1>
+            <div style="font-size:0.8em; margin-top:10px; letter-spacing: 1px;">
+                <span id="dbDot" class="status-dot"></span> 
+                <span id="dbStatusText" data-translate="dbStatus">Secure Network: Verified</span>
+            </div>
+        </div>
+
+        <div class="tab-header">
+            <div class="tab-btn active" onclick="openTab(event, 'tabAdd')" id="tab1Head">Protocol 1: Seal</div>
+            <div class="tab-btn" onclick="openTab(event, 'tabEdit')" id="tab2Head">Protocol 2: Modify</div>
+            <div class="tab-btn" onclick="openTab(event, 'tabVerify')" id="tab3Head">Protocol 3: Authenticate</div>
+            <div class="tab-btn" onclick="openTab(event, 'tabProfile')" id="tab4Head">👤 Secure Profile</div>
+        </div>
+
+        <!-- TAB 1: ADD -->
+        <div id="tabAdd" class="tab-content active">
+            <div id="addFormWrapper">
+                <h2 data-translate="addTitle">📤 Register Digital Ownership</h2>
+                <input type="file" id="addImg" accept="image/*">
+                <input type="text" id="addName" placeholder="👤 Identity Name">
+                <input type="tel" id="addMobile" placeholder="📱 Secure Contact">
+                <input type="text" id="addId" placeholder="🆔 Reference ID (Encrypted)">
+                <button id="addBtn" class="action-btn" disabled onclick="handleRegister()" data-translate="addBtn">Initialize Ownership Protocol</button>
+            </div>
+            <div id="addResult" class="hidden">
+                <div class="result-box success-box" data-translate="addSuccess">✅ Integrity Sealed Successfully!</div>
+                <div class="owner-card">
+                    <h3 data-translate="certHeader">👑 Integrity Certificate</h3>
+                    <div class="detail-row"><span data-translate="lblOwner">Subject:</span> <b id="resName"></b></div>
+                    <div class="detail-row"><span data-translate="lblMobile">Contact:</span> <b id="resMobile"></b></div>
+                    <div class="detail-row"><span data-translate="lblId">Vault Reference:</span> <b id="resId"></b></div>
+                </div>
+            </div>
+            <button class="action-btn reset-btn" onclick="resetAddTab()" data-translate="btnReset">⟳ Initialize New Registry</button>
+        </div>
+
+        <!-- TAB 2: EDIT -->
+        <div id="tabEdit" class="tab-content">
+            <h2 data-translate="editTitle">✏️ Modify Registry Entry</h2>
+            <input type="file" id="editImg" accept="image/*">
+            <div id="editScanResult" class="result-box hidden"></div>
+            
+            <div id="editLockBox" class="hidden" style="background:#f7fafc; padding:20px; border-radius:18px; margin-top:15px; border: 1px solid #e2e8f0;">
+                <p style="font-weight:bold; color:var(--secondary); margin-bottom:12px;" data-translate="editLockMsg">🔒 Match Confirmed! Unlock Vault:</p>
+                <input type="text" id="editVerifyId" placeholder="Enter Vault Reference ID">
+                <button class="action-btn" onclick="unlockEditForm()" data-translate="btnUnlock">🔑 Authenticate & Unlock</button>
+            </div>
+
+            <div id="editFormBox" class="hidden">
+                <input type="text" id="editNameNew" placeholder="Update Identity">
+                <input type="tel" id="editMobileNew" placeholder="Update Contact">
+                <input type="text" id="editIdNew" placeholder="Update Reference ID">
+                <button class="action-btn" onclick="updateDatabase()" data-translate="btnUpdateDB">🔄 Synchronize Vault</button>
+            </div>
+            <button class="action-btn reset-btn" onclick="resetEditTab()" data-translate="btnReset">⟳ Clear Environment</button>
+        </div>
+
+        <!-- TAB 3: VERIFY -->
+        <div id="tabVerify" class="tab-content">
+            <h2 data-translate="verifyTitle">🔍 Global Integrity Scan</h2>
+            <p style="font-size:0.85em; color:#666; margin-bottom:15px;">Advanced Neural Scan: Resistant to crops, filters, and digital forgery.</p>
+            <input type="file" id="verifyImg" accept="image/*">
+            <div id="verifyScanMsg" class="result-box hidden"></div>
+            <button id="verifyBtn" class="action-btn" onclick="handleVerify()" disabled data-translate="btnVerify">✅ Execute Deep Neural Scan</button>
+            <div id="verifyResult" class="hidden"></div>
+            <button class="action-btn reset-btn" onclick="resetVerifyTab()" data-translate="btnReset">⟳ Reset Scanner</button>
+        </div>
+
+        <!-- TAB 4: PROFILE -->
+        <div id="tabProfile" class="tab-content">
+            <h2 data-translate="profileTitle">👤 Identity Profile</h2>
+            <div class="owner-card">
+                <div class="detail-row"><span data-translate="lblOwner">Name:</span> <b id="profName">-</b></div>
+                <div class="detail-row"><span>Authorized Email:</span> <b id="profEmail">-</b></div>
+                <div class="detail-row"><span data-translate="lblMobile">Secure Mobile:</span> <b id="profMob">-</b></div>
+                <div class="detail-row"><span data-translate="lblId">Identity Reference:</span> <b id="profId">-</b></div>
+            </div>
+            <div style="margin-top:30px; border:1px solid #edf2f7; padding:20px; border-radius:18px;">
+                <h3 style="margin-bottom:15px; font-size:1em; color:var(--secondary);" data-translate="profUpdateHead">Update Security Parameters</h3>
+                <input type="text" id="upProfName" placeholder="Full Name">
+                <input type="tel" id="upProfMob" placeholder="Secure Contact">
+                <button class="action-btn secondary-btn" onclick="updateProfile()" data-translate="btnUpdateProf">Update Profile Security</button>
+            </div>
+            <button class="action-btn logout-btn" onclick="handleLogout()" data-translate="btnLogout">🚪 Terminate Session</button>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://trchucfdpjqizvdepebb.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_f17wjBRos0UahSTol-SHlQ_4XZyNp0k';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        let currentUser = null;
+        let currentLang = 'en';
+
+        // Professional Notification System
+        function notify(msg, type = 'success') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            
+            const icon = type === 'success' ? '🛡️' : (type === 'error' ? '🚫' : '⚠️');
+            
+            toast.innerHTML = `
+                <span class="toast-icon">${icon}</span>
+                <span class="toast-msg">${msg}</span>
+            `;
+            
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 100);
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => toast.remove(), 500);
+            }, 4000);
+        }
+
+        const i18n = {
+            en: {
+                appHeader: "🛡️ Secure Integrity Suite", dbStatus: "Secure Network: Verified",
+                tab1: "Protocol 1: Seal", tab2: "Protocol 2: Modify", tab3: "Protocol 3: Authenticate", tab4: "👤 Secure Profile",
+                addTitle: "📤 Register Digital Ownership", addBtn: "Initialize Ownership Protocol", addSuccess: "✅ Integrity Sealed Successfully!",
+                certHeader: "👑 Integrity Certificate", lblOwner: "Subject:", lblMobile: "Contact:", lblId: "Vault Reference:",
+                btnReset: "⟳ Initialize New Registry", editTitle: "✏️ Modify Registry Entry", editLockMsg: "🔒 Match Confirmed! Unlock Vault:",
+                btnUnlock: "🔑 Authenticate & Unlock", btnUpdateDB: "🔄 Synchronize Vault", verifyTitle: "🔍 Global Integrity Scan",
+                btnVerify: "✅ Execute Deep Neural Scan", profileTitle: "👤 Identity Profile", profUpdateHead: "Update Security Parameters",
+                btnUpdateProf: "Update Profile Security", btnLogout: "🚪 Terminate Session", 
+                errAlreadyOwned: "🛑 Integrity Conflict: Fingerprint detected in an existing vault. Entry denied.", 
+                errWrongId: "Authentication Failed: Incorrect Reference ID."
+            },
+            hi: {
+                appHeader: "🛡️ सुरक्षित अखंडता सुइट", dbStatus: "सुरक्षित नेटवर्क: सत्यापित",
+                tab1: "प्रोटोकॉल 1: सील करें", tab2: "प्रोटोकॉल 2: बदलें", tab3: "प्रोटोकॉल 3: प्रमाणित", tab4: "👤 प्रोफाइल",
+                addTitle: "📤 डिजिटल स्वामित्व पंजीकृत करें", addBtn: "स्वामित्व प्रोटोकॉल शुरू करें", addSuccess: "✅ सफलतापूर्वक अखंडता सील कर दी गई!",
+                certHeader: "👑 अखंडता प्रमाण पत्र", lblOwner: "विषय:", lblMobile: "संपर्क:", lblId: "वॉल्ट संदर्भ:",
+                btnReset: "⟳ नया पंजीकरण शुरू करें", editTitle: "✏️ रजिस्ट्री प्रविष्टि बदलें", editLockMsg: "🔒 मिलान पुष्ट! वॉल्ट अनलॉक करें:",
+                btnUnlock: "🔑 प्रमाणित और अनलॉक करें", btnUpdateDB: "🔄 वॉल्ट सिंक्रनाइज़ करें", verifyTitle: "🔍 ग्लोबल अखंडता स्कैन",
+                btnVerify: "✅ डीप न्यूरल स्कैन चलाएं", profileTitle: "👤 पहचान प्रोफाइल", profUpdateHead: "सुरक्षा मापदंड अपडेट करें",
+                btnUpdateProf: "प्रोफ़ाइल सुरक्षा अपडेट करें", btnLogout: "🚪 सत्र समाप्त करें",
+                errAlreadyOwned: "🛑 अखंडता संघर्ष: फिंगरप्रिंट पहले से ही किसी वॉल्ट में मौजूद है। प्रवेश वर्जित।", 
+                errWrongId: "प्रमाणीकरण विफल: गलत संदर्भ आईडी।"
+            }
+        };
+
+        function changeLang() {
+            currentLang = (currentLang === 'en') ? 'hi' : 'en';
+            document.getElementById('langToggleBtn').innerText = (currentLang === 'en') ? '🌐 Hindi Mode' : '🌐 English Mode';
+            document.querySelectorAll('[data-translate]').forEach(el => { el.innerText = i18n[currentLang][el.getAttribute('data-translate')]; });
+            document.getElementById('tab1Head').innerText = i18n[currentLang].tab1;
+            document.getElementById('tab2Head').innerText = i18n[currentLang].tab2;
+            document.getElementById('tab3Head').innerText = i18n[currentLang].tab3;
+            document.getElementById('tab4Head').innerText = i18n[currentLang].tab4;
+        }
+
+        // --- RESET LOGIC ---
+        function resetAddTab() {
+            document.getElementById('addImg').value = "";
+            document.getElementById('addFormWrapper').classList.remove('hidden');
+            document.getElementById('addResult').classList.add('hidden');
+            document.getElementById('addBtn').disabled = true;
+            tempAddHash = ""; tempImg = null;
+            fetchProfile();
+        }
+        function resetEditTab() {
+            document.getElementById('editImg').value = "";
+            document.getElementById('editScanResult').classList.add('hidden');
+            document.getElementById('editLockBox').classList.add('hidden');
+            document.getElementById('editFormBox').classList.add('hidden');
+            document.getElementById('editVerifyId').value = "";
+            editRecord = null;
+        }
+        function resetVerifyTab() {
+            document.getElementById('verifyImg').value = "";
+            document.getElementById('verifyScanMsg').classList.add('hidden');
+            document.getElementById('verifyResult').classList.add('hidden');
+            document.getElementById('verifyBtn').disabled = true;
+        }
+
+        // --- AUTH ---
+        function toggleAuth(isSignup) {
+            document.getElementById('loginForm').classList.toggle('hidden', isSignup);
+            document.getElementById('signupForm').classList.toggle('hidden', !isSignup);
+            document.getElementById('authTitle').innerText = isSignup ? 'Security Registration' : 'Security Authentication';
+        }
+
+        async function handleSignup() {
+            const gen = document.getElementById('regGender').value;
+            const dob = document.getElementById('regDob').value;
+            if(!gen || !dob) return notify("Profile parameters (Gender/DOB) required.", "warning");
+            
+            const { data, error } = await supabaseClient.auth.signUp({ email: document.getElementById('regEmail').value, password: document.getElementById('regPass').value });
+            if(error) return notify(error.message, "error");
+            if(data.user) {
+                await supabaseClient.from('profiles').insert([{ id: data.user.id, full_name: document.getElementById('regName').value, mobile: document.getElementById('regMobile').value, id_number: document.getElementById('regId').value, gender: gen, dob: dob }]);
+                notify("Security Profile Initialized. Authenticate to proceed."); toggleAuth(false);
+            }
+        }
+
+        async function handleLogin() {
+            const { error } = await supabaseClient.auth.signInWithPassword({ email: document.getElementById('loginEmail').value, password: document.getElementById('loginPass').value });
+            if(error) notify("Access Denied: Invalid Credentials.", "error");
+            else notify("Secure Session Established.", "success");
+        }
+
+        async function handleLogout() { 
+            await supabaseClient.auth.signOut(); 
+            notify("Session Terminated Safely.");
+            setTimeout(() => location.reload(), 1000);
+        }
+
+        supabaseClient.auth.onAuthStateChange(async (event, session) => {
+            if (session) {
+                currentUser = session.user;
+                document.getElementById('authSection').classList.add('hidden');
+                document.getElementById('appSection').style.display = 'block';
+                document.getElementById('dbDot').classList.add('active');
+                fetchProfile();
+            } else {
+                document.getElementById('authSection').classList.remove('hidden');
+                document.getElementById('appSection').style.display = 'none';
+            }
+        });
+
+        async function fetchProfile() {
+            const { data } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
+            if(data) {
+                document.getElementById('profName').innerText = data.full_name;
+                document.getElementById('profEmail').innerText = currentUser.email;
+                document.getElementById('profMob').innerText = data.mobile;
+                document.getElementById('profId').innerText = data.id_number;
+                document.getElementById('addName').value = data.full_name;
+                document.getElementById('addMobile').value = data.mobile;
+                document.getElementById('addId').value = data.id_number;
+                document.getElementById('upProfName').value = data.full_name;
+                document.getElementById('upProfMob').value = data.mobile;
+            }
+        }
+
+        async function updateProfile() {
+            const { error } = await supabaseClient.from('profiles').update({ full_name: document.getElementById('upProfName').value, mobile: document.getElementById('upProfMob').value }).eq('id', currentUser.id);
+            if(!error) {
+                notify("Security Parameters Synchronized."); 
+                fetchProfile();
+            } else notify("Sync Failed.", "error");
+        }
+
+        // --- GLOBAL SECURITY ENGINE ---
+        async function getPHash(img) {
+            return new Promise(res => {
+                const canvas = document.createElement('canvas');
+                const ctx = canvas.getContext('2d');
+                canvas.width = 33; canvas.height = 32;
+                ctx.drawImage(img, 0, 0, 33, 32);
+                const data = ctx.getImageData(0, 0, 33, 32).data;
+                let gray = [];
+                for (let i = 0; i < data.length; i += 4) { gray.push(data[i] * 0.299 + data[i+1] * 0.587 + data[i+2] * 0.114); }
+                let hash = "";
+                for (let y = 0; y < 32; y++) {
+                    for (let x = 0; x < 32; x++) { hash += (gray[y * 33 + x] < gray[y * 33 + (x + 1)] ? '1' : '0'); }
+                }
+                res(hash);
+            });
+        }
+
+        function getSim(h1, h2) {
+            let m = 0; for(let i=0; i<1024; i++) if(h1[i] === h2[i]) m++;
+            return (m/1024)*100;
+        }
+
+        async function findGlobalOwner(targetHash) {
+            const { data, error } = await supabaseClient.from('image_ownership').select('*');
+            if(!data || error) return null;
+            let best = null, maxS = 0;
+            data.forEach(row => {
+                let s = getSim(targetHash, row.image_hash);
+                if(s > 61 && s > maxS) { maxS = s; best = row; }
+            });
+            return best;
+        }
+
+        // --- TAB 1: ADD ---
+        let tempAddHash = "", tempImg = null;
+        document.getElementById('addImg').onchange = async (e) => {
+            const img = new Image();
+            img.onload = async () => { tempImg = img; tempAddHash = await getPHash(img); document.getElementById('addBtn').disabled = false; };
+            img.src = URL.createObjectURL(e.target.files[0]);
+        };
+
+        async function handleRegister() {
+            const btn = document.getElementById('addBtn'); btn.innerText = "⏳ Scanning Registry Vault..."; btn.disabled = true;
+            
+            const globalOwner = await findGlobalOwner(tempAddHash);
+            if(globalOwner) {
+                notify(i18n[currentLang].errAlreadyOwned, "error");
+                btn.innerText = i18n[currentLang].addBtn; btn.disabled = false;
+                return;
+            }
+
+            const { error } = await supabaseClient.from('image_ownership').insert([{
+                image_hash: tempAddHash, owner_name: document.getElementById('addName').value, mobile: document.getElementById('addMobile').value, id_number: document.getElementById('addId').value, user_id: currentUser.id
+            }]);
+            
+            if(error) {
+                if(error.code === '23505') notify("🛑 Fingerprint collision detected in Vault.", "error");
+                else notify("Protocol Error: " + error.message, "error");
+            } else {
+                notify("Digital Fingerprint Authenticated.", "success");
+                document.getElementById('addFormWrapper').classList.add('hidden');
+                document.getElementById('resName').innerText = document.getElementById('addName').value;
+                document.getElementById('resMobile').innerText = document.getElementById('addMobile').value;
+                document.getElementById('resId').innerText = document.getElementById('addId').value;
+                document.getElementById('addResult').classList.remove('hidden');
+            }
+            btn.innerText = i18n[currentLang].addBtn; btn.disabled = false;
+        }
+
+        // --- TAB 2: EDIT ---
+        let editRecord = null;
+        document.getElementById('editImg').onchange = async (e) => {
+            const img = new Image();
+            img.onload = async () => {
+                const hash = await getPHash(img); editRecord = await findGlobalOwner(hash);
+                if(editRecord) {
+                    notify("Identity Match Found.", "success");
+                    document.getElementById('editLockBox').classList.remove('hidden');
+                } else { 
+                    const res = document.getElementById('editScanResult');
+                    res.innerText = "❌ Fingerprint not found in Vault."; res.className="result-box error-box"; res.classList.remove('hidden');
+                }
+            };
+            img.src = URL.createObjectURL(e.target.files[0]);
+        };
+
+        function unlockEditForm() {
+            if(document.getElementById('editVerifyId').value === editRecord.id_number) {
+                notify("Vault Unlocked.", "success");
+                document.getElementById('editLockBox').classList.add('hidden');
+                document.getElementById('editFormBox').classList.remove('hidden');
+                document.getElementById('editNameNew').value = editRecord.owner_name;
+                document.getElementById('editMobileNew').value = editRecord.mobile;
+                document.getElementById('editIdNew').value = editRecord.id_number;
+            } else notify(i18n[currentLang].errWrongId, "error");
+        }
+
+        async function updateDatabase() {
+            const { error } = await supabaseClient.from('image_ownership').update({ 
+                owner_name: document.getElementById('editNameNew').value, 
+                mobile: document.getElementById('editMobileNew').value, 
+                id_number: document.getElementById('editIdNew').value 
+            }).eq('id', editRecord.id);
+            if(!error) { 
+                notify("Vault Entry Synchronized."); 
+                resetEditTab(); 
+            } else notify("Update Interrupted.", "error");
+        }
+
+        // --- TAB 3: VERIFY ---
+        document.getElementById('verifyImg').onchange = () => { document.getElementById('verifyBtn').disabled = false; };
+        async function handleVerify() {
+            const btn = document.getElementById('verifyBtn'); btn.innerText = "⏳ Executing Deep Neural Scan...";
+            const img = new Image();
+            img.onload = async () => {
+                const hash = await getPHash(img); const match = await findGlobalOwner(hash);
+                const res = document.getElementById('verifyResult'); res.classList.remove('hidden');
+                if(match) {
+                    notify("Authentication Complete.", "success");
+                    const mask = (s) => s.substring(0, 2) + "****" + s.slice(-2);
+                    res.innerHTML = `<div class="owner-card"><h3 style="color:#2ed573">✅ ORIGINAL IDENTITY DETECTED</h3><div class="detail-row"><span>Authorized Subject:</span> <b>${match.owner_name}</b></div><div class="detail-row"><span>Secure Contact:</span> <b>${mask(match.mobile)}</b></div><div class="detail-row"><span>Vault ID:</span> <b>${mask(match.id_number)}</b></div></div>`;
+                } else {
+                    notify("Authentication Failed: Unknown Identity.", "warning");
+                    res.innerHTML = `<div class="result-box error-box">❌ Entry Warning: Subject is UNPROTECTED. No integrity seal found.</div>`;
+                }
+                btn.innerText = i18n[currentLang].btnVerify;
+            };
+            img.src = URL.createObjectURL(document.getElementById('verifyImg').files[0]);
+        }
+
+        function openTab(evt, tabName) {
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.getElementById(tabName).classList.add('active');
+            evt.currentTarget.classList.add('active');
+        }
+    </script>
+</body>
+</html>
