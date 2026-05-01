@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛡️ Vilayas Secure Image | Ultra Robust SaaS</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+
+    <style>
+        :root { 
+            --primary: #22c55e; --secondary: #1e3c72; --bg: #0f172a; 
+            --card-bg: #1e293b; --text-main: #f8fafc; --text-muted: #94a3b8;
+            --danger: #ef4444; --info: #3b82f6; --premium: #f59e0b;
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+        body.light-mode { --bg: #f1f5f9; --card-bg: #ffffff; --text-main: #1e293b; --text-muted: #64748b; --glass-border: rgba(0, 0, 0, 0.1); }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; transition: 0.3s; }
+        body { background: var(--bg); min-height: 100vh; padding: 15px; display: flex; justify-content: center; color: var(--text-main); }
+        
+        /* ORIGINAL TOAST SYSTEM */
+        #toast-container { position: fixed; top: 25px; left: 50%; transform: translateX(-50%); z-index: 10000; width: 90%; max-width: 420px; }
+        .toast { background: rgba(15, 23, 42, 0.9); backdrop-filter: blur(20px); color: white; padding: 18px 25px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); margin-bottom: 12px; display: flex; align-items: center; gap: 15px; border: 1px solid var(--glass-border); transform: translateY(-120%); opacity: 0; transition: all 0.6s cubic-bezier(0.23, 1, 0.32, 1); }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast-icon { width: 35px; height: 35px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        .toast.success .toast-icon { background: var(--primary); }
+        .toast.error .toast-icon { background: var(--danger); }
+        .toast.warning .toast-icon { background: var(--premium); }
+
+        .auth-box { background: var(--card-bg); width: 100%; max-width: 450px; border-radius: 25px; padding: 35px; border: 1px solid var(--glass-border); margin-top: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+        .app-container { background: var(--card-bg); width: 100%; max-width: 600px; border-radius: 25px; border: 1px solid var(--glass-border); overflow: hidden; display: none; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+        
+        .header { background: linear-gradient(135deg, var(--secondary), #2a5298); padding: 15px 12px; position: relative; color: white; border-radius: 25px 25px 0 0; }
+        .app-title { font-size: 1.05em; font-weight: 800; letter-spacing: -0.2px; line-height: 1.2; }
+        .tab-header { display: flex; background: rgba(0,0,0,0.05); border-bottom: 1px solid var(--glass-border); }
+        .tab-btn { flex: 1; padding: 18px 5px; text-align: center; cursor: pointer; font-weight: 700; color: var(--text-muted); font-size: 0.85em; }
+        .tab-btn.active { color: var(--info); border-bottom: 3px solid var(--info); }
+        .tab-content { padding: 30px; display: none; animation: fadeIn 0.4s ease; }
+        .tab-content.active { display: block; }
+
+        input, select { width: 100%; padding: 16px; margin: 10px 0; background: rgba(0,0,0,0.05); border: 1px solid var(--glass-border); border-radius: 15px; font-size: 15px; outline: none; color: var(--text-main); }
+        .action-btn { width: 100%; padding: 16px; background: var(--info); color: white; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; margin-top: 15px; font-size: 16px; }
+        .action-btn:disabled { background: #64748b; opacity: 0.6; }
+        .reset-btn { background: transparent; border: 1px solid var(--glass-border); color: var(--text-muted); font-size: 13px; margin-top: 20px; }
+        
+        .owner-card { background: rgba(0,0,0,0.03); border: 1px solid var(--glass-border); padding: 25px; border-radius: 20px; margin-top: 20px; border-left: 6px solid var(--info); }
+        .cert-img { width: 100%; max-height: 250px; object-fit: contain; border-radius: 15px; margin-bottom: 15px; background: #000; border: 1px solid var(--glass-border); }
+        .detail-row { display: flex; justify-content: space-between; margin: 12px 0; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; }
+        .hidden { display: none !important; }
+        .quota-box { font-size: 0.85em; color: var(--premium); margin-bottom: 10px; font-weight: bold; }
+    </style>
+</head>
+<body class="dark-mode">
+
+    <div id="toast-container"></div>
+
+    <!-- AUTH SECTION -->
+    <div id="authSection" class="auth-box">
+        <h2 style="text-align:center; margin-bottom:20px;">Vilayas Identity</h2>
+        <div id="loginForm">
+            <input type="email" id="loginEmail" placeholder="Authorized Email">
+            <input type="password" id="loginPass" placeholder="Secure Password">
+            <button class="action-btn" onclick="handleLogin()">Enter Registry</button>
+            <button class="action-btn" style="background:#4a5568;" onclick="toggleAuth(true)">Create New Account</button>
+        </div>
+        <div id="signupForm" class="hidden">
+            <input type="text" id="regName" placeholder="Full Name">
+            <input type="email" id="regEmail" placeholder="Email ID">
+            <input type="tel" id="regMobile" placeholder="Contact Mobile">
+            <input type="text" id="regId" placeholder="Aadhaar / Passport ID">
+            <select id="regGender"><option value="Male">Male</option><option value="Female">Female</option></select>
+            <input type="date" id="regDob">
+            <input type="password" id="regPass" placeholder="Passphrase (min 6)">
+            <button class="action-btn" onclick="handleSignup()">Initialize Identity</button>
+            <button class="action-btn" style="background:#4a5568;" onclick="toggleAuth(false)">Back</button>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="appSection" class="app-container">
+        <div class="header">
+            <h1 class="app-title">🛡️ Vilayas Secure Image</h1>
+            <div style="font-size:0.7em; margin-top:5px; opacity:0.8;">Registry Active | 1024-bit Protection</div>
+        </div>
+
+        <div class="tab-header">
+            <div class="tab-btn active" onclick="openTab(event, 'tabAdd')">Register</div>
+            <div class="tab-btn" onclick="openTab(event, 'tabEdit')">Modify</div>
+            <div class="tab-btn" onclick="openTab(event, 'tabVerify')">Verify</div>
+            <div class="tab-btn" onclick="openTab(event, 'tabProfile')">Profile</div>
+        </div>
+
+        <!-- TAB: REGISTER -->
+        <div id="tabAdd" class="tab-content active">
+            <div id="addFormWrapper">
+                <h2 style="font-size:1.2em; margin-bottom:15px;">📤 Register Ownership</h2>
+                <div class="quota-box">Free Ownerships Left: <span id="quotaReg">3</span></div>
+                <input type="file" id="addImg" accept="image/*">
+                <input type="text" id="addName" placeholder="Owner Name">
+                <input type="tel" id="addMobile" placeholder="Mobile">
+                <input type="text" id="addId" placeholder="Registry ID">
+                <button id="addBtn" class="action-btn" disabled onclick="handleRegister()">Seal Ownership</button>
+            </div>
+            <div id="addResult" class="hidden">
+                <div class="owner-card">
+                    <h3 style="color:var(--info); margin-bottom:15px;">📜 Certificate Issued</h3>
+                    <img id="resCertImg" class="cert-img">
+                    <div class="detail-row"><span>Owner:</span> <b id="resName"></b></div>
+                    <div class="detail-row"><span>ID:</span> <b id="resId"></b></div>
+                </div>
+            </div>
+            <button class="action-btn reset-btn" onclick="resetAddTab()">⟳ Clear Panel</button>
+        </div>
+
+        <!-- TAB: MODIFY (WITH LOCK LOGIC) -->
+        <div id="tabEdit" class="tab-content">
+            <h2>✏️ Update Registry</h2>
+            <div class="quota-box">Free Modifications Left: <span id="quotaMod">3</span></div>
+            <input type="file" id="editImg" accept="image/*">
+            <div id="editLockBox" class="hidden" style="background:rgba(0,0,0,0.1); padding:20px; border-radius:20px;">
+                <p style="font-weight:700; margin-bottom:10px;">🔒 Match Found! Verify ID:</p>
+                <input type="text" id="editVerifyId" placeholder="Registry ID">
+                <button class="action-btn" onclick="unlockEditForm()">Authenticate</button>
+            </div>
+            <div id="editFormBox" class="hidden">
+                <input type="text" id="editNameNew" placeholder="New Name">
+                <button class="action-btn" onclick="updateDatabase()">Sync Changes</button>
+            </div>
+            <button class="action-btn reset-btn" onclick="resetEditTab()">⟳ Clear Panel</button>
+        </div>
+
+        <!-- TAB: VERIFY (WITH MASKING) -->
+        <div id="tabVerify" class="tab-content">
+            <h2>🔍 Neural Scan</h2>
+            <div class="quota-box">Free Verifications Left: <span id="quotaVer">3</span></div>
+            <input type="file" id="verifyImg" accept="image/*">
+            <div id="verifyIdWrapper" class="hidden">
+                <input type="text" id="verifyInputId" placeholder="Owner's Registry ID">
+                <button class="action-btn" onclick="handleVerify()">Start Scan</button>
+            </div>
+            <div id="verifyResult" class="hidden"></div>
+            <button class="action-btn reset-btn" onclick="resetVerifyTab()">⟳ New Scan</button>
+        </div>
+
+        <!-- TAB: PROFILE (SaaS) -->
+        <div id="tabProfile" class="tab-content">
+            <h2>👤 Identity Profile</h2>
+            <div class="owner-card" style="border-left-color: var(--premium); background: rgba(245, 158, 11, 0.05);">
+                <h3 style="color:var(--premium)">🌟 SaaS Plan</h3>
+                <div class="detail-row"><span>Status:</span> <b id="planStatus">Free</b></div>
+                <button id="upgradeBtn" class="action-btn" style="background:var(--premium)" onclick="processPayment()">Upgrade to PRO (₹299/mo)</button>
+            </div>
+            <div class="owner-card">
+                <div class="detail-row"><span>Name:</span> <b id="profNameDisplay">-</b></div>
+                <div class="detail-row"><span>Email:</span> <b id="profEmail">-</b></div>
+            </div>
+            <button class="action-btn logout-btn" onclick="handleLogout()">🚪 Logout</button>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://trchucfdpjqizvdepebb.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_f17wjBRos0UahSTol-SHlQ_4XZyNp0k';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const cashfree = Cashfree({ mode: "sandbox" }); 
+
+        let currentUser = null, userData = null, currentHash = "", currentImgUrl = "";
+        const LIMIT = 3;
+
+        function notify(t, m, type='info') {
+            const container = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icons = { success: '✓', error: '✕', warning: '★', info: 'ℹ' };
+            toast.innerHTML = `<div class="toast-icon">${icons[type]}</div><div class="toast-content"><span class="toast-title">${t}</span><span class="toast-msg">${m}</span></div>`;
+            container.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 100);
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 600); }, 4500);
+        }
+
+        // --- AUTH ---
+        async function handleSignup() {
+            const { data, error } = await supabaseClient.auth.signUp({ email: regEmail.value, password: regPass.value });
+            if(data.user) {
+                await supabaseClient.from('profiles').insert([{ id: data.user.id, full_name: regName.value, mobile: regMobile.value, id_number: regId.value, is_premium: false }]);
+                notify("Success", "Account created! Login now.", "success"); toggleAuth(false);
+            } else notify("Error", error.message, "error");
+        }
+        async function handleLogin() {
+            const { error } = await supabaseClient.auth.signInWithPassword({ email: loginEmail.value, password: loginPass.value });
+            if(error) notify("Login Fail", "Invalid details", "error");
+        }
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (session) {
+                currentUser = session.user; authSection.classList.add('hidden');
+                appSection.style.display = 'block'; fetchProfile();
+            } else { authSection.classList.remove('hidden'); appSection.style.display = 'none'; }
+        });
+
+        async function fetchProfile() {
+            const { data } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
+            if(data) {
+                userData = data;
+                profEmail.innerText = currentUser.email; profNameDisplay.innerText = data.full_name;
+                const isP = data.is_premium;
+                planStatus.innerText = isP ? "💎 PRO Active" : "Free Tier";
+                quotaReg.innerText = isP ? "Unlimited" : (LIMIT - data.reg_count);
+                quotaMod.innerText = isP ? "Unlimited" : (LIMIT - data.mod_count);
+                quotaVer.innerText = isP ? "Unlimited" : (LIMIT - data.ver_count);
+                if(isP) upgradeBtn.classList.add('hidden');
+            }
+        }
+
+        // --- NEURAL HASH (1024-BIT) ---
+        async function getPHash(img) {
+            return new Promise(res => {
+                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                canvas.width = 32; canvas.height = 32; ctx.drawImage(img, 0, 0, 32, 32);
+                const pix = ctx.getImageData(0, 0, 32, 32).data;
+                let gray = [], total = 0;
+                for (let i = 0; i < pix.length; i += 4) {
+                    let g = pix[i]*0.299 + pix[i+1]*0.587 + pix[i+2]*0.114;
+                    gray.push(g); total += g;
+                }
+                let avg = total / 1024, hash = "";
+                for (let g of gray) hash += (g >= avg ? "1" : "0");
+                res(hash);
+            });
+        }
+
+        async function findOwner(h) {
+            const { data } = await supabaseClient.from('image_ownership').select('*');
+            if(!data) return null;
+            let best = null, maxS = 0;
+            data.forEach(r => {
+                let m = 0; for(let i=0; i<1024; i++) if(h[i] === r.image_hash[i]) m++;
+                let s = (m/1024)*100; if(s > 68 && s > maxS) { maxS = s; best = r; }
+            });
+            return best;
+        }
+
+        // --- ACTIONS ---
+        addImg.onchange = async (e) => {
+            const file = e.target.files[0];
+            if(!file) return;
+            const img = new Image();
+            img.onload = async () => { 
+                currentHash = await getPHash(img); 
+                currentImgUrl = URL.createObjectURL(file);
+                addBtn.disabled = false; 
+            };
+            img.src = URL.createObjectURL(file);
+        };
+
+        async function handleRegister() {
+            if(!userData.is_premium && userData.reg_count >= LIMIT) return notify("Limit Reached", "Upgrade to Pro!", "warning");
+            const btn = document.getElementById('addBtn'); btn.innerText = "⏳ Sealing..."; btn.disabled = true;
+
+            const owner = await findOwner(currentHash);
+            if(owner) { notify("Conflict", "Image already registered!", "error"); btn.innerText = "Seal Ownership"; btn.disabled = false; return; }
+
+            const { error } = await supabaseClient.from('image_ownership').insert([{
+                image_hash: currentHash, user_id: userData.id, owner_name: addName.value, mobile: addMobile.value, id_number: addId.value
+            }]);
+
+            if(!error) {
+                await supabaseClient.from('profiles').update({ reg_count: userData.reg_count + 1 }).eq('id', userData.id);
+                notify("Success", "Ownership Sealed!", "success");
+                addFormWrapper.classList.add('hidden');
+                resCertImg.src = currentImgUrl; resName.innerText = addName.value; resId.innerText = addId.value;
+                addResult.classList.remove('hidden'); fetchProfile();
+            }
+        }
+
+        async function processPayment() {
+            notify("Processing", "Contacting gateway...", "warning");
+            const { data } = await supabaseClient.rpc('create_order_mobile', { user_id_val: userData.id, amount_val: 299, phone_val: "9999999999" });
+            if(data?.payment_session_id) {
+                cashfree.checkout({ paymentSessionId: data.payment_session_id, redirectTarget: "_modal" }).then(async (r) => {
+                    if(r.paymentDetails) {
+                        await supabaseClient.from('profiles').update({ is_premium: true }).eq('id', userData.id);
+                        notify("Premium Active", "Welcome!", "success"); fetchProfile();
+                    }
+                });
+            } else notify("Error", "Payment Busy.", "error");
+        }
+
+        // --- UTILS ---
+        function resetAddTab() { addFormWrapper.classList.remove('hidden'); addResult.classList.add('hidden'); addImg.value = ""; addBtn.disabled = true; notify("Reset", "Panel Cleared", "info"); }
+        function openTab(e, id) { document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+        function toggleAuth(s) { loginForm.classList.toggle('hidden', s); signupForm.classList.toggle('hidden', !s); }
+        function handleLogout() { supabaseClient.auth.signOut(); location.reload(); }
+        function toggleTheme() { document.body.classList.toggle('light-mode'); }
+    </script>
+</body>
+</html>
