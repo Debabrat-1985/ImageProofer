@@ -1,0 +1,392 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🛡️ Vilayas Secure Image | Ultra Robust SaaS</title>
+    
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://sdk.cashfree.com/js/v3/cashfree.js"></script>
+
+    <style>
+        :root { 
+            --primary: #22c55e; --secondary: #1e3c72; --bg: #0f172a; 
+            --card-bg: #1e293b; --text-main: #f8fafc; --text-muted: #94a3b8;
+            --danger: #ef4444; --info: #3b82f6; --premium: #f59e0b;
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        body.light-mode { --bg: #f1f5f9; --card-bg: #ffffff; --text-main: #1e293b; --text-muted: #64748b; --glass-border: rgba(0, 0, 0, 0.1); }
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Segoe UI', Roboto, sans-serif; transition: background 0.2s, color 0.2s; }
+        body { background: var(--bg); min-height: 100vh; padding: 15px; display: flex; justify-content: center; color: var(--text-main); }
+        
+        /* TOAST SYSTEM */
+        #toast-container { position: fixed; top: 25px; left: 50%; transform: translateX(-50%); z-index: 10000; width: 90%; max-width: 420px; }
+        .toast { background: rgba(15, 23, 42, 0.95); backdrop-filter: blur(20px); color: white; padding: 18px 25px; border-radius: 20px; box-shadow: 0 20px 40px rgba(0,0,0,0.5); margin-bottom: 12px; display: flex; align-items: center; gap: 15px; border: 1px solid var(--glass-border); transform: translateY(-120%); opacity: 0; transition: all 0.5s cubic-bezier(0.23, 1, 0.32, 1); }
+        .toast.show { transform: translateY(0); opacity: 1; }
+        .toast-icon { width: 35px; height: 35px; border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; }
+        .toast.success .toast-icon { background: var(--primary); }
+        .toast.error .toast-icon { background: var(--danger); }
+        .toast.warning .toast-icon { background: var(--premium); }
+        .toast.info .toast-icon { background: var(--info); }
+        .toast-title { font-weight: 800; font-size: 14px; display: block; }
+        .toast-msg { font-size: 12px; color: #cbd5e1; }
+
+        .auth-box { background: var(--card-bg); width: 100%; max-width: 450px; border-radius: 25px; padding: 35px; border: 1px solid var(--glass-border); margin-top: 40px; box-shadow: 0 20px 50px rgba(0,0,0,0.3); }
+        .app-container { background: var(--card-bg); width: 100%; max-width: 600px; border-radius: 25px; border: 1px solid var(--glass-border); overflow: hidden; display: none; box-shadow: 0 20px 60px rgba(0,0,0,0.4); }
+        
+        .header { background: linear-gradient(135deg, var(--secondary), #2a5298); padding: 15px 12px; position: relative; color: white; border-radius: 25px 25px 0 0; }
+        .app-title { font-size: 1.05em; font-weight: 800; letter-spacing: -0.2px; line-height: 1.2; width: 55%; }
+        .controls { position: absolute; top: 22px; right: 10px; display: flex; gap: 5px; }
+        .btn-ctrl { background: rgba(255,255,255,0.12); border: 1px solid rgba(255,255,255,0.2); color: white; padding: 4px 9px; border-radius: 20px; cursor: pointer; font-size: 0.68em; font-weight: bold; }
+
+        .tab-header { display: flex; background: rgba(0,0,0,0.05); border-bottom: 1px solid var(--glass-border); }
+        .tab-btn { flex: 1; padding: 18px 5px; text-align: center; cursor: pointer; font-weight: 700; color: var(--text-muted); transition: 0.3s; font-size: 0.85em; border-bottom: 3px solid transparent; }
+        .tab-btn.active { color: var(--info); border-bottom: 3px solid var(--info); background: rgba(59, 130, 246, 0.05); }
+        .tab-content { padding: 30px; display: none; animation: fadeIn 0.3s ease; }
+        .tab-content.active { display: block; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        input, select { width: 100%; padding: 16px; margin: 10px 0; background: rgba(0,0,0,0.05); border: 1px solid var(--glass-border); border-radius: 15px; font-size: 15px; outline: none; color: var(--text-main); }
+        input:focus { border-color: var(--info); }
+        .action-btn { width: 100%; padding: 16px; background: var(--info); color: white; border: none; border-radius: 15px; font-weight: bold; cursor: pointer; margin-top: 15px; font-size: 16px; }
+        .action-btn:disabled { background: #64748b; opacity: 0.6; cursor: not-allowed; }
+        .premium-btn { background: var(--premium); border: none; box-shadow: 0 4px 15px rgba(245, 158, 11, 0.4); }
+        .reset-btn { background: transparent; border: 1px solid var(--glass-border); color: var(--text-muted); font-size: 13px; margin-top: 20px; width: 100%; }
+        .logout-btn { background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.2); color: #ef4444; margin-top: 30px; }
+
+        .owner-card { background: rgba(0,0,0,0.03); border: 1px solid var(--glass-border); padding: 25px; border-radius: 20px; margin-top: 20px; border-left: 6px solid var(--info); }
+        .cert-img { width: 100%; max-height: 250px; object-fit: contain; border-radius: 15px; margin-bottom: 15px; background: #000; border: 1px solid var(--glass-border); display: block; margin: 0 auto; }
+        .detail-row { display: flex; justify-content: space-between; margin: 12px 0; border-bottom: 1px solid var(--glass-border); padding-bottom: 10px; align-items: center; }
+        .detail-row span { color: var(--text-muted); font-size: 0.9em; }
+        .detail-row b { font-size: 0.95em; text-align: right; }
+        .hidden { display: none !important; }
+        .quota-box { font-size: 0.8em; color: var(--premium); margin-bottom: 10px; font-weight: bold; display: block; }
+    </style>
+</head>
+<body class="dark-mode">
+
+    <div id="toast-container"></div>
+
+    <!-- AUTH SECTION -->
+    <div id="authSection" class="auth-box">
+        <h2 id="authTitle" style="text-align:center; margin-bottom:20px;">Vilayas Identity</h2>
+        <div id="loginForm">
+            <input type="email" id="loginEmail" placeholder="Authorized Email">
+            <input type="password" id="loginPass" placeholder="Secure Password">
+            <button class="action-btn" onclick="handleLogin()" data-translate="btnLogin">Enter Registry</button>
+            <button class="action-btn" style="background:#4a5568;" onclick="toggleAuth(true)" data-translate="btnSwitchSignup">Create New Account</button>
+        </div>
+        <div id="signupForm" class="hidden">
+            <input type="text" id="regName" placeholder="Full Name">
+            <input type="email" id="regEmail" placeholder="Email ID">
+            <input type="tel" id="regMobile" placeholder="Contact Mobile">
+            <input type="text" id="regId" placeholder="Aadhaar / Passport ID">
+            <select id="regGender">
+                <option value="" data-translate="optGender">Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+            </select>
+            <input type="date" id="regDob">
+            <input type="password" id="regPass" placeholder="Passphrase (min 6)">
+            <button class="action-btn" onclick="handleSignup()" data-translate="btnSignup">Initialize Identity</button>
+            <button class="action-btn" style="background:#4a5568;" onclick="toggleAuth(false)" data-translate="btnBack">Back to Login</button>
+        </div>
+    </div>
+
+    <!-- MAIN APP -->
+    <div id="appSection" class="app-container">
+        <div class="header">
+            <h1 class="app-title">🛡️ Vilayas Secure Image</h1>
+            <div style="font-size:0.7em; margin-top:1px; color: rgba(255,255,255,0.7); margin-left: 5px;">
+                <span id="dbDot" style="display:inline-block; width:10px; height:10px; border-radius:50%; background:#fc8181; margin-right:8px;"></span> <span id="dbStatusText" data-translate="dbStatus">Registry Active</span>
+            </div>
+            <div class="controls">
+                <button id="themeToggleBtn" class="btn-ctrl" onclick="toggleTheme()">🌙 Night</button>
+                <button id="langToggleBtn" class="btn-ctrl" onclick="changeLang()">🌐 Hindi</button>
+            </div>
+        </div>
+
+        <div class="tab-header">
+            <div class="tab-btn active" onclick="openTab(event, 'tabAdd')" data-translate="tabRegister">Register</div>
+            <div class="tab-btn" onclick="openTab(event, 'tabEdit')" data-translate="tabModify">Modify</div>
+            <div class="tab-btn" onclick="openTab(event, 'tabVerify')" data-translate="tabVerify">Verify</div>
+            <div class="tab-btn" onclick="openTab(event, 'tabProfile')" data-translate="tabProfile">Profile</div>
+        </div>
+
+        <!-- TAB: REGISTER -->
+        <div id="tabAdd" class="tab-content active">
+            <div id="addFormWrapper">
+                <h2 data-translate="addTitle">📤 Register Ownership</h2>
+                <span class="quota-box">Free Ownerships Left: <b id="quotaReg">3</b></span>
+                <input type="file" id="addImg" accept="image/*">
+                <input type="text" id="addName" placeholder="Owner Name">
+                <input type="tel" id="addMobile" placeholder="Contact Mobile">
+                <input type="text" id="addId" placeholder="Unique Registry ID">
+                <button id="addBtn" class="action-btn" disabled onclick="handleRegister()" data-translate="btnRegisterAct">Seal Ownership</button>
+            </div>
+            <div id="addResult" class="hidden">
+                <div class="owner-card">
+                    <h3 style="color:var(--info); margin-bottom:15px;" data-translate="certHeader">📜 Ownership Certificate</h3>
+                    <img id="resCertImg" class="cert-img">
+                    <div class="detail-row"><span data-translate="lblOwner">Owner:</span> <b id="resName"></b></div>
+                    <div class="detail-row"><span data-translate="lblMobile">Mobile:</span> <b id="resMobile"></b></div>
+                    <div class="detail-row"><span data-translate="lblId">Registry ID:</span> <b id="resId"></b></div>
+                </div>
+            </div>
+            <button class="action-btn reset-btn" onclick="resetAddTab()" data-translate="btnReset">⟳ Clear Panel</button>
+        </div>
+
+        <!-- TAB: MODIFY -->
+        <div id="tabEdit" class="tab-content">
+            <h2 data-translate="editTitle">✏️ Update Registry</h2>
+            <span class="quota-box">Free Modifications Left: <b id="quotaMod">3</b></span>
+            <input type="file" id="editImg" accept="image/*">
+            <div id="editLockBox" class="hidden" style="background:rgba(0,0,0,0.1); padding:20px; border-radius:20px; border: 1px solid var(--glass-border);">
+                <p style="font-weight:700; margin-bottom:12px;" data-translate="editLockMsg">🔒 Match Found! Verify ID to unlock:</p>
+                <input type="text" id="editVerifyId" placeholder="Registry ID">
+                <button class="action-btn" onclick="unlockEditForm()" data-translate="btnUnlock">Authenticate Ownership</button>
+            </div>
+            <div id="editFormBox" class="hidden">
+                <input type="text" id="editNameNew" placeholder="Update Name">
+                <input type="tel" id="editMobileNew" placeholder="Update Mobile">
+                <input type="text" id="editIdNew" placeholder="Update ID">
+                <button class="action-btn" onclick="updateDatabase()" data-translate="btnSync">Apply Changes</button>
+            </div>
+            <button class="action-btn reset-btn" onclick="resetEditTab()" data-translate="btnReset">⟳ Clear Panel</button>
+        </div>
+
+        <!-- TAB: VERIFY -->
+        <div id="tabVerify" class="tab-content">
+            <h2 data-translate="verifyTitle">🔍 Global Verification</h2>
+            <span class="quota-box">Free Verifications Left: <b id="quotaVer">3</b></span>
+            <p style="font-size:0.85em; color:var(--text-muted); margin-bottom:15px;" data-translate="verifyDesc">Neural scan identifies the owner globally via Digital Fingerprint.</p>
+            <input type="file" id="verifyImg" accept="image/*">
+            <div id="verifyIdWrapper" class="hidden">
+                <input type="text" id="verifyInputId" placeholder="Enter Registry ID of Owner">
+                <button id="verifyBtn" class="action-btn" onclick="handleVerify()" data-translate="btnVerifyAct">Execute Neural Scan</button>
+            </div>
+            <div id="verifyResult" class="hidden"></div>
+            <button class="action-btn reset-btn" onclick="resetVerifyTab()" data-translate="btnReset">⟳ New Scan</button>
+        </div>
+
+        <!-- TAB: PROFILE -->
+        <div id="tabProfile" class="tab-content">
+            <h2 data-translate="profileTitle">👤 Identity Profile</h2>
+            <div class="owner-card" style="border-left-color: var(--premium); background: rgba(245, 158, 11, 0.05); margin-bottom: 20px;">
+                <h3 style="color:var(--premium)">🌟 SaaS Subscription</h3>
+                <div class="detail-row"><span>Plan Status:</span> <b id="planStatus">Free Tier</b></div>
+                <button id="upgradeBtn" class="action-btn premium-btn" onclick="processPayment()">Upgrade to PRO (₹299/mo)</button>
+            </div>
+
+            <div class="owner-card" style="border-left-color: var(--info);">
+                <div class="detail-row"><span>Full Name:</span> <b id="profNameDisplay">-</b></div>
+                <div class="detail-row"><span>Mobile:</span> <b id="profMobDisplay">**********</b></div>
+                <div class="detail-row"><span>Email:</span> <b id="profEmail">-</b></div>
+                <div class="detail-row"><span>ID:</span> <b id="profIdDisplay">**********</b></div>
+                <div class="detail-row"><span>Password:</span> <b>********</b></div>
+            </div>
+
+            <div style="margin-top:20px; padding:20px; background:rgba(0,0,0,0.1); border-radius:20px; border: 1px solid var(--glass-border);">
+                <h3 style="font-size:1em; margin-bottom:10px;" data-translate="profEditHead">Edit Account Details</h3>
+                <input type="text" id="upProfName" placeholder="Update Full Name">
+                <input type="tel" id="upProfMob" placeholder="Update Mobile">
+                <input type="password" id="upProfPass" placeholder="Update Password (leave blank to stay)">
+                <button class="action-btn" onclick="updateProfile()" data-translate="btnProfUpdate">Save Profile</button>
+            </div>
+            <button class="action-btn logout-btn" onclick="handleLogout()" data-translate="btnLogout">Logout Session</button>
+        </div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://trchucfdpjqizvdepebb.supabase.co';
+        const SUPABASE_KEY = 'sb_publishable_f17wjBRos0UahSTol-SHlQ_4XZyNp0k';
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+        const cashfree = Cashfree({ mode: "sandbox" }); 
+
+        let currentUser = null, userData = null, currentHash = "", currentImgUrl = "", currentLang = 'en';
+        const LIMIT = 3;
+
+        const i18n = {
+            en: { appHeader: "Vilayas Secure Image", dbStatus: "Registry Active", tabRegister: "Register", tabModify: "Modify", tabVerify: "Verify", tabProfile: "Profile", addTitle: "📤 Register Ownership", btnRegisterAct: "Seal Ownership", editTitle: "✏️ Update Registry", editLockMsg: "🔒 Match Found! Verify ID to unlock:", verifyTitle: "🔍 Global Verification", btnVerifyAct: "Execute Neural Scan", verifyDesc: "Neural scan identifies the owner globally via Digital Fingerprint.", profileTitle: "👤 Identity Profile", btnLogout: "Logout Session", certHeader: "📜 Ownership Certificate", lblOwner: "Owner:", lblMobile: "Mobile:", lblId: "Registry ID:", btnReset: "⟳ Clear Panel", btnSync: "Apply Changes", btnLogin: "Enter Registry", btnSignup: "Initialize Identity", btnBack: "Back", btnUnlock: "Authenticate", optGender: "Select Gender", profEditHead: "Edit Details", btnProfUpdate: "Save Profile", msgLimit: "Limit Reached! Please upgrade to PRO.", msgConflict: "Conflict: This image is already owned by someone else.", msgNoRegistry: "Please create ownership first: No record found.", msgUnauthorized: "Unauthorized: You are not the owner.", msgIdFail: "Security Error: Incorrect Registry ID.", msgSync: "Registry Synchronized.", msgReset: "Panel Reset Successful." },
+            hi: { appHeader: "Vilayas Secure Image", dbStatus: "रजिस्ट्री सक्रिय", tabRegister: "पंजीकरण", tabModify: "बदलाव", tabVerify: "सत्यापन", tabProfile: "प्रोफाइल", addTitle: "📤 मालिकाना हक दर्ज करें", btnRegisterAct: "स्वामित्व सील करें", editTitle: "✏️ रजिस्ट्री अपडेट करें", editLockMsg: "🔒 मिलान मिला! आईडी सत्यापित करें:", verifyTitle: "🔍 ग्लोबल सत्यापन", btnVerifyAct: "न्यूरल स्कैन चलाएं", verifyDesc: "न्यूरल स्कैन डिजिटल फिंगरप्रिंट के माध्यम से मालिक की पहचान करता है।", profileTitle: "👤 पहचान प्रोफाइल", btnLogout: "सत्र समाप्त करें", certHeader: "📜 मालिकाना प्रमाण पत्र", lblOwner: "मालिक:", lblMobile: "मोबाइल:", lblId: "रजिस्ट्री आईडी:", btnReset: "⟳ पैनल साफ करें", btnSync: "बदलाव लागू करें", btnLogin: "प्रवेश करें", btnSignup: "प्रोफाइल शुरू करें", btnBack: "पीछे", btnUnlock: "सत्यापित करें", optGender: "लिंग चुनें", profEditHead: "खाता अपडेट करें", btnProfUpdate: "सुरक्षित करें", msgLimit: "सीमा समाप्त! कृपया PRO में अपग्रेड करें।", msgConflict: "संघर्ष: यह इमेज पहले से किसी की है।", msgNoRegistry: "कृपया पहले ओनरशिप बनाएं: कोई रिकॉर्ड नहीं मिला।", msgUnauthorized: "अनधिकृत: आप मालिक नहीं हैं।", msgIdFail: "गलत रजिस्ट्री आईडी।", msgSync: "रजिस्ट्री अपडेट हो गई।", msgReset: "पैनल साफ हो गया।" }
+        };
+
+        function notify(t, m, type='info') {
+            const c = document.getElementById('toast-container');
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            const icons = { success: '✓', error: '✕', warning: '★', info: 'ℹ' };
+            toast.innerHTML = `<div class="toast-icon">${icons[type]}</div><div class="toast-content"><span class="toast-title">${t}</span><span class="toast-msg">${m}</span></div>`;
+            c.appendChild(toast);
+            setTimeout(() => toast.classList.add('show'), 100);
+            setTimeout(() => { toast.classList.remove('show'); setTimeout(() => toast.remove(), 600); }, 4500);
+        }
+
+        const maskStr = (s) => s ? s.substring(0, 2) + "****" + s.slice(-2) : "**********";
+
+        // --- AUTH ---
+        async function handleSignup() {
+            const { data, error } = await supabaseClient.auth.signUp({ email: regEmail.value, password: regPass.value });
+            if(data.user) {
+                await supabaseClient.from('profiles').insert([{ id: data.user.id, full_name: regName.value, mobile: regMobile.value, id_number: regId.value, gender: regGender.value, dob: regDob.value, is_premium: false, reg_count: 0, mod_count: 0, ver_count: 0 }]);
+                notify("Success", "Account created!", "success"); toggleAuth(false);
+            } else notify("Error", error.message, "error");
+        }
+        async function handleLogin() { 
+            const { error } = await supabaseClient.auth.signInWithPassword({ email: loginEmail.value, password: loginPass.value });
+            if(error) notify("Fail", "Invalid details", "error");
+        }
+        supabaseClient.auth.onAuthStateChange((event, session) => {
+            if (session) {
+                currentUser = session.user; authSection.classList.add('hidden'); appSection.style.display = 'block';
+                dbDot.style.background = "#68d391"; fetchProfile();
+            } else { authSection.classList.remove('hidden'); appSection.style.display = 'none'; }
+        });
+
+        async function fetchProfile() {
+            const { data } = await supabaseClient.from('profiles').select('*').eq('id', currentUser.id).single();
+            if(data) {
+                userData = data; profEmail.innerText = currentUser.email; profNameDisplay.innerText = data.full_name;
+                profMobDisplay.innerText = maskStr(data.mobile); profIdDisplay.innerText = maskStr(data.id_number);
+                upProfName.value = data.full_name; upProfMob.value = data.mobile;
+                addName.value = data.full_name; addMobile.value = data.mobile; addId.value = data.id_number;
+                const isP = data.is_premium;
+                planStatus.innerText = isP ? "💎 PREMIUM Active" : "Free Tier";
+                quotaReg.innerText = isP ? "Unlimited" : Math.max(0, LIMIT - data.reg_count);
+                quotaMod.innerText = isP ? "Unlimited" : Math.max(0, LIMIT - data.mod_count);
+                quotaVer.innerText = isP ? "Unlimited" : Math.max(0, LIMIT - data.ver_count);
+                if(isP) upgradeBtn.classList.add('hidden');
+            }
+        }
+
+        async function updateProfile() {
+            const { error } = await supabaseClient.from('profiles').update({ full_name: upProfName.value, mobile: upProfMob.value }).eq('id', currentUser.id);
+            if(upProfPass.value) await supabaseClient.auth.updateUser({ password: upProfPass.value });
+            if(!error) { notify("Sync", i18n[currentLang].msgSync, "success"); fetchProfile(); }
+        }
+
+        // --- NEURAL HASH (1024-BIT) ---
+        async function getPHash(img) {
+            return new Promise(res => {
+                const canvas = document.createElement('canvas'); const ctx = canvas.getContext('2d');
+                canvas.width = 32; canvas.height = 32; ctx.drawImage(img, 0, 0, 32, 32);
+                const pix = ctx.getImageData(0, 0, 32, 32).data;
+                let gray = [], total = 0;
+                for (let i = 0; i < pix.length; i += 4) {
+                    let g = pix[i]*0.299 + pix[i+1]*0.587 + pix[i+2]*0.114;
+                    gray.push(g); total += g;
+                }
+                let avg = total / 1024;
+                res(gray.map(g => g >= avg ? "1" : "0").join(""));
+            });
+        }
+
+        async function findOwner(h) {
+            const { data } = await supabaseClient.from('image_ownership').select('*');
+            if(!data) return null;
+            let best = null, maxS = 0;
+            for(const r of data) {
+                let m = 0; for(let i=0; i<1024; i++) if(h[i] === r.image_hash[i]) m++;
+                let s = (m/1024)*100; if(s > 68 && s > maxS) { maxS = s; best = r; }
+            }
+            return best;
+        }
+
+        // --- REGISTER ---
+        addImg.onchange = async (e) => {
+            const file = e.target.files[0]; if(!file) return;
+            const img = new Image(); img.onload = async () => { 
+                currentHash = await getPHash(img); currentImgUrl = URL.createObjectURL(file); addBtn.disabled = false; 
+            };
+            img.src = URL.createObjectURL(file);
+        };
+
+        async function handleRegister() {
+            if(!userData.is_premium && userData.reg_count >= LIMIT) return notify("Limit", i18n[currentLang].msgLimit, "warning");
+            const btn = document.getElementById('addBtn'); btn.innerText = "⏳ Sealing..."; btn.disabled = true;
+            const owner = await findOwner(currentHash);
+            if(owner) { 
+                const oName = (owner.user_id === currentUser.id) ? "you" : owner.owner_name;
+                notify("Conflict", `This image is already owned by ${oName}.`, "error"); 
+                btn.innerText = "Seal Ownership"; btn.disabled = false; return; 
+            }
+            const { error } = await supabaseClient.from('image_ownership').insert([{ image_hash: currentHash, user_id: userData.id, owner_name: addName.value, mobile: addMobile.value, id_number: addId.value }]);
+            if(!error) {
+                await supabaseClient.from('profiles').update({ reg_count: userData.reg_count + 1 }).eq('id', userData.id);
+                notify("Success", "Ownership Sealed", "success");
+                addFormWrapper.classList.add('hidden'); resCertImg.src = currentImgUrl; resName.innerText = addName.value; resMobile.innerText = addMobile.value; resId.innerText = addId.value; addResult.classList.remove('hidden'); fetchProfile();
+            }
+            btn.innerText = "Seal Ownership";
+        }
+
+        // --- MODIFY ---
+        let editRec = null;
+        editImg.onchange = async (e) => {
+            editLockBox.classList.add('hidden'); editFormBox.classList.add('hidden');
+            const file = e.target.files[0]; if(!file) return;
+            const img = new Image(); img.onload = async () => {
+                const h = await getPHash(img); editRec = await findOwner(h);
+                if(!editRec) notify("Registry Alert", i18n[currentLang].msgNoRegistry, "info");
+                else if(editRec.user_id !== currentUser.id) notify("Access Denied", `Unauthorized: Owned by ${editRec.owner_name}. You cannot modify this.`, "error");
+                else { notify("Identity Match", "Owner Verified. Proceed with ID.", "success"); editLockBox.classList.remove('hidden'); }
+            };
+            img.src = URL.createObjectURL(file);
+        };
+
+        function unlockEditForm() {
+            if(!userData.is_premium && userData.mod_count >= LIMIT) return notify("Limit", i18n[currentLang].msgLimit, "warning");
+            if(editVerifyId.value === editRec.id_number) { editLockBox.classList.add('hidden'); editFormBox.classList.remove('hidden'); editNameNew.value = editRec.owner_name; editMobileNew.value = editRec.mobile; editIdNew.value = editRec.id_number; }
+            else notify("Error", i18n[currentLang].msgIdFail, "error");
+        }
+
+        async function updateDatabase() {
+            const { error } = await supabaseClient.from('image_ownership').update({ owner_name: editNameNew.value, mobile: editMobileNew.value, id_number: editIdNew.value }).eq('id', editRec.id);
+            if(!error) { await supabaseClient.from('profiles').update({ mod_count: userData.mod_count + 1 }).eq('id', currentUser.id); notify("Sync", "Updated!", "success"); resetEditTab(); fetchProfile(); }
+        }
+
+        // --- VERIFY ---
+        let verifyMatch = null;
+        verifyImg.onchange = async (e) => {
+            verifyIdWrapper.classList.add('hidden'); verifyResult.classList.add('hidden'); verifyResult.innerHTML = "";
+            const file = e.target.files[0]; if(!file) return;
+            const img = new Image(); img.onload = async () => {
+                const h = await getPHash(img); verifyMatch = await findOwner(h);
+                if(verifyMatch) { notify("Found", "Registry Match Detected", "success"); verifyIdWrapper.classList.remove('hidden'); }
+                else { notify("Unprotected", i18n[currentLang].msgNoRegistry, "warning"); verifyResult.innerHTML = "❌ No Record Found."; verifyResult.classList.remove('hidden'); }
+            };
+            img.src = URL.createObjectURL(file);
+        };
+
+        async function handleVerify() {
+            if(!userData.is_premium && userData.ver_count >= LIMIT) return notify("Limit", i18n[currentLang].msgLimit, "warning");
+            if(verifyInputId.value === verifyMatch.id_number) {
+                await supabaseClient.from('profiles').update({ ver_count: userData.ver_count + 1 }).eq('id', currentUser.id);
+                verifyResult.innerHTML = `<div class="owner-card"><h3>✅ VERIFIED</h3><div class="detail-row"><span>Owner:</span> <b>${verifyMatch.owner_name}</b></div><div class="detail-row"><span>Mobile:</span> <b>${maskStr(verifyMatch.mobile)}</b></div><div class="detail-row"><span>ID:</span> <b>${maskStr(verifyMatch.id_number)}</b></div></div>`;
+                verifyResult.classList.remove('hidden'); fetchProfile();
+            } else notify("Fail", i18n[currentLang].msgIdFail, "error");
+        }
+
+        // --- PAYMENT ---
+        async function processPayment() {
+            notify("Processing", "Initializing secure payment...", "warning");
+            const { data } = await supabaseClient.rpc('create_order_mobile', { user_id_val: userData.id, amount_val: 299, phone_val: userData.mobile || "9999999999" });
+            if(data?.payment_session_id) {
+                cashfree.checkout({ paymentSessionId: data.payment_session_id, redirectTarget: "_modal" }).then(async (r) => {
+                    if(r.paymentDetails) { await supabaseClient.from('profiles').update({ is_premium: true }).eq('id', userData.id); notify("Premium Active", "Welcome!", "success"); fetchProfile(); }
+                });
+            } else notify("Error", "Payment system busy.", "error");
+        }
+
+        // --- UI ---
+        function toggleAuth(s) { loginForm.classList.toggle('hidden', s); signupForm.classList.toggle('hidden', !s); }
+        function openTab(e, n) { document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active')); document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active')); document.getElementById(n).classList.add('active'); e.currentTarget.classList.add('active'); }
+        function toggleTheme() { document.body.classList.toggle('light-mode'); themeToggleBtn.innerText = document.body.classList.contains('light-mode') ? "☀️ Day" : "🌙 Night"; }
+        function changeLang() { currentLang = currentLang === 'en' ? 'hi' : 'en'; langToggleBtn.innerText = currentLang === 'en' ? '🌐 Hindi' : '🌐 English'; document.querySelectorAll('[data-translate]').forEach(el => el.innerText = i18n[currentLang][el.getAttribute('data-translate')] || el.innerText); }
+        function handleLogout() { supabaseClient.auth.signOut(); location.reload(); }
+        function resetAddTab() { addFormWrapper.classList.remove('hidden'); addResult.classList.add('hidden'); addImg.value=""; addName.value=userData.full_name; addMobile.value=userData.mobile; addId.value=userData.id_number; currentImgUrl=""; addBtn.disabled=true; notify("Reset", i18n[currentLang].msgReset, "info"); }
+        function resetEditTab() { editImg.value = ""; editLockBox.classList.add('hidden'); editFormBox.classList.add('hidden'); editVerifyId.value = ""; }
+        function resetVerifyTab() { verifyImg.value = ""; verifyInputId.value = ""; verifyIdWrapper.classList.add('hidden'); verifyResult.classList.add('hidden'); }
+    </script>
+</body>
+</html>
